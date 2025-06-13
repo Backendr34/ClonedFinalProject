@@ -33,7 +33,7 @@ def tyre_page():
     return render_template("tyre.html")
 
 
-# records Records
+# records page
 
 @app.route("/record")
 def record_page():
