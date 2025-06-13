@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,7 +14,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         /* Custom styles not easily done with Tailwind */
-        body { 
+        body {
             font-family: 'Inter', sans-serif; /* Using Inter as primary font */
             color: #333;
             display: flex;
@@ -23,7 +23,8 @@
             padding: 0; /* Adjusted for full-width content */
             margin: 0;
             overflow-x: hidden; /* Prevent horizontal scroll */
-            background-image: url('https://img.freepik.com/free-photo/view-car-battery_23-2150033190.jpg?size=626&ext=jpg&ga=GA1.1.1826414947.1712016000&semt=ais'); /* New battery-related background */
+            background-image: url('https://plus.unsplash.com/premium_photo-1681433401553-589104846604?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8Y2FyJTIwYmF0dGVyeXxlbnwwfHwwfHx8MA%3D%3D'); /* New battery-related background */
+            background-color: #f0f0f0; /* Light grey background color */
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
@@ -667,7 +668,7 @@
         <img src="https://placehold.co/600x400/AEC6CF/000000?text=Inspect+Battery+for+Damage" alt="Inspect Battery for Damage">
         <p class="text-gray-700 mb-2">Ensure the battery is securely mounted in its tray. Vibrations from a loose battery can cause internal damage or external cracking.</p>
         <img src="https://placehold.co/600x400/CDB8DF/000000?text=Secure+Battery+Mount" alt="Secure Battery Mount">
-        <p class="text-gray-700 mb-2">Any battery with physical damage that causes leaking or swelling should be replaced immediately. Handle with care due to corrosive acid.</p>
+        <p class="text-700 mb-2">Any battery with physical damage that causes leaking or swelling should be replaced immediately. Handle with care due to corrosive acid.</p>
         <img src="https://placehold.co/600x400/ADD8E6/000000?text=Replace+Physically+Damaged+Battery" alt="Replace Physically Damaged Battery">
     </div>
 
@@ -690,7 +691,7 @@
         <p class="text-gray-700 mb-2">Check the serpentine belt for proper tension and condition. A loose or worn belt will prevent the alternator from generating enough power.</p>
         <img src="https://placehold.co/600x400/CDB8DF/000000?text=Check+Serpentine+Belt" alt="Check Serpentine Belt">
         <p class="text-gray-700 mb-2">If the alternator is undercharging, it needs to be repaired or replaced. This ensures the battery receives adequate charge during operation.</p>
-        <img src="https://placehold.co/600x400/ADD8E6/000000?text=Replace+Undercharging+Alternator" alt="Replace Undercharging Alternator">
+        <img src="https://placehold.co/600x400/ADD8E6/000000?text=Replace+Undercharging+Alternator" alt="Replace Undercharging+Alternator">
     </div>
 
     <div class="popup" id="popupR">
@@ -832,7 +833,7 @@
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyA00JLDOlCKfCtuZv6bNxXlAlRAKn123IE";
+                const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -899,7 +900,7 @@
         userInput.addEventListener('input', handleInputChange);
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !sendButton.disabled) {
+            if (event.key === "Enter" && !sendButton.disabled) {
                 sendMessage();
             }
         });
