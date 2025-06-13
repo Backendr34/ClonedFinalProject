@@ -78,6 +78,11 @@ def transmission_page():
 def query_page():
     return render_template("query.html")
 
+#Contact Us page 
+@app.route("/contact")
+def contact_page():
+    return render_template("contact.html")
+
 
 # Run the app
 if __name__ == "__main__":
