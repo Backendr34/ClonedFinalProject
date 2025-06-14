@@ -3,169 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="https://i.pinimg.com/736x/c5/94/96/c5949627262b8098970838894f57c94e.jpg"/>
+    <link rel="shortcut icon" href="https://i.pinimg.com/736x/c5/94/96/c5949627262b8098970838894f57c94e.jpg" onerror="this.href='https://placehold.co/16x16/1C4E80/FFFFFF?text=R'"/>
     <title>Car Repair Help - Digital Service Records</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let app;
-        let db;
-        let auth;
-        let userId = 'loading...';
-
-        async function initFirebase() {
-            try {
-                if (!firebaseConfig.apiKey) {
-                    console.error("Firebase config is missing API key.");
-                    showCustomMessage("Firebase not configured. Data persistence will not work.");
-                    return;
-                }
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('currentUserId').textContent = `Your User ID: ${userId}`;
-                        fetchServiceRecords();
-                    } else {
-                        userId = 'anonymous';
-                        document.getElementById('currentUserId').textContent = `Your User ID: ${userId} (signed out)`;
-                        fetchServiceRecords();
-                    }
-                });
-
-            } catch (error) {
-                console.error("Error initializing Firebase:", error);
-                document.getElementById('currentUserId').textContent = `Firebase Error: ${error.message}`;
-            }
-        }
-
-        initFirebase();
-
-        window.addServiceRecord = async () => {
-            const serviceDate = document.getElementById('serviceDate').value;
-            const serviceType = document.getElementById('serviceType').value;
-            const serviceNotes = document.getElementById('serviceNotes').value;
-
-            if (!serviceDate || !serviceType || !serviceNotes) {
-                showCustomMessage('Please fill in all fields (Date, Service Type, Notes).');
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, `artifacts/${appId}/public/data/serviceRecords`), {
-                    userId: userId,
-                    date: serviceDate,
-                    serviceType: serviceType,
-                    notes: serviceNotes,
-                    timestamp: serverTimestamp()
-                });
-                document.getElementById('serviceDate').value = '';
-                document.getElementById('serviceType').value = '';
-                document.getElementById('serviceNotes').value = '';
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                showCustomMessage('Error adding record. Please try again.');
-            }
-        };
-
-        function fetchServiceRecords() {
-            if (!db) {
-                console.error("Firestore not initialized.");
-                return;
-            }
-
-            const recordsRef = collection(db, `artifacts/${appId}/public/data/serviceRecords`);
-            const q = query(recordsRef, orderBy("timestamp", "desc"));
-
-            onSnapshot(q, (snapshot) => {
-                const recordsContainer = document.getElementById('recordsTimeline');
-                recordsContainer.innerHTML = '';
-
-                if (snapshot.empty) {
-                    recordsContainer.innerHTML = '<p class="text-gray-600 text-center">No service records found. Add one!</p>';
-                    return;
-                }
-
-                snapshot.forEach((doc) => {
-                    const record = doc.data();
-                    const recordElement = document.createElement('div');
-                    recordElement.className = 'bg-white p-4 rounded-lg shadow-md mb-4 border-l-4 border-[#1C4E80] relative';
-
-                    let formattedDate = record.date;
-                    if (record.timestamp && record.timestamp.toDate) {
-                        const date = record.timestamp.toDate();
-                        formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric', month: 'long', day: 'numeric'
-                        });
-                    }
-
-                    recordElement.innerHTML = `
-                        <div class="absolute -left-2 top-0 mt-4 w-4 h-4 bg-[#1C4E80] rounded-full transform -translate-x-1/2"></div>
-                        <p class="text-xs text-gray-500 mb-1">${formattedDate}</p>
-                        <h4 class="text-xl font-semibold text-[#1C4E80] mb-2">${record.serviceType}</h4>
-                        <p class="text-gray-700 mb-2">${record.notes}</p>
-                        <p class="text-xs text-gray-400">Recorded by: ${record.userId}</p>
-                    `;
-                    recordsContainer.appendChild(recordElement);
-                });
-            }, (error) => {
-                console.error("Error fetching documents: ", error);
-                document.getElementById('recordsTimeline').innerHTML = '<p class="text-red-500 text-center">Error loading records. Please try again.</p>';
-            });
-        }
-
-        function showCustomMessage(message) {
-            const messageBox = document.createElement('div');
-            messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            messageBox.innerHTML = `
-                <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
-                    <p class="text-lg font-semibold mb-4">${message}</p>
-                    <button class="bg-[#1C4E80] text-white px-6 py-2 rounded-md hover:bg-[#0C2A4F] transition" onclick="this.parentNode.parentNode.remove()">OK</button>
-                </div>
-            `;
-            document.body.appendChild(messageBox);
-        }
-
-        window.onload = () => {
-            fetchServiceRecords();
-        };
-    </script>
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0;
-            margin: 0;
-            overflow-x: hidden;
-            background-color: #E0F2FE;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-attachment: fixed;
+            background-color: #E0F2FE; /* Light blue background */
         }
+        main {
+            flex-grow: 1;
+        }
+        /* Custom scrollbar styles */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -180,98 +35,57 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        /* Styles for the timeline effect */
         .timeline-container {
             position: relative;
-            max-width: 800px;
-            margin: 0 auto;
             padding: 20px 0;
         }
-        .timeline-container::after {
+        .timeline-container::before {
             content: '';
             position: absolute;
-            width: 2px;
-            background-color: #1C4E80;
+            left: 20px;
             top: 0;
             bottom: 0;
-            left: 50%;
-            margin-left: -1px;
-            z-index: 0;
+            width: 2px;
+            background-color: #1C4E80;
         }
-        .timeline-container > div {
-            margin-bottom: 20px;
+        .timeline-item {
             position: relative;
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 45%;
-            z-index: 1;
+            margin-left: 40px; /* Space for the timeline line and dot */
         }
-        .timeline-container > div:nth-child(odd) {
-            left: 0;
-        }
-        .timeline-container > div:nth-child(even) {
-            left: 55%;
-        }
-        .timeline-container > div::before {
+        .timeline-dot {
             content: '';
             position: absolute;
-            width: 0;
-            height: 0;
-            border-style: solid;
-            top: 25px;
-            z-index: 2;
-        }
-        .timeline-container > div:nth-child(odd)::before {
-            border-width: 10px 0 10px 10px;
-            border-color: transparent transparent transparent white;
-            right: -10px;
-        }
-        .timeline-container > div:nth-child(even)::before {
-            border-width: 10px 10px 10px 0;
-            border-color: transparent white transparent transparent;
-            left: -10px;
-        }
-        @media (max-width: 768px) {
-            .timeline-container::after {
-                left: 20px;
-            }
-            .timeline-container > div {
-                width: calc(100% - 40px);
-                margin-left: 40px;
-                left: 0;
-            }
-            .timeline-container > div .absolute {
-                left: 20px !important;
-                transform: translateX(-50%);
-            }
-            .timeline-container > div:nth-child(odd)::before,
-            .timeline-container > div:nth-child(even)::before {
-                left: 30px;
-                border-color: transparent white transparent transparent;
-                border-width: 10px 10px 10px 0;
-            }
+            left: -10px; /* Position over the timeline line */
+            top: 1.25rem; /* Align with the center of the date text */
+            height: 1rem;
+            width: 1rem;
+            background-color: #1C4E80;
+            border-radius: 50%;
+            border: 2px solid white;
+            transform: translateX(-50%);
         }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    <nav class="w-full bg-[#1C4E80] p-4 shadow-xl relative z-10">
+    <nav class="w-full bg-[#1C4E80] p-4 shadow-xl sticky top-0 z-20">
         <div class="container mx-auto flex flex-wrap items-center justify-between">
             <h1 class="text-white text-3xl font-bold rounded-lg p-2">Car Repair Assistance</h1>
             <div class="flex flex-grow justify-end md:flex-grow-0 space-x-2 sm:space-x-4">
-                <a href="contact.html" class="text-white hover:text-blue-200 transition duration-300">Contact</a>
-                <a href="records.html" class="text-white hover:text-blue-200 transition duration-300 font-bold text-blue-200">Records</a>
+                 <a href="contact.html" class="text-white hover:text-blue-200 transition duration-300">Contact</a>
+                 <a href="records.html" class="text-white font-bold border-b-2 border-blue-300 transition duration-300">Records</a>
             </div>
         </div>
     </nav>
 
-    <main class="content flex-grow max-w-4xl w-full text-center mt-8 relative z-10 p-4 sm:p-0">
-        <h1 class="text-5xl font-extrabold text-[#1C4E80] mb-4">DIGITAL SERVICE RECORDS</h1>
-        <p class="text-black font-bold text-lg mb-8 bg-white bg-opacity-70 p-2 rounded-md inline-block">TRACK YOUR CAR'S SERVICE HISTORY EASILY.</p>
+    <main class="container mx-auto w-full text-center mt-8 relative z-10 p-4">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-[#1C4E80] mb-4">Digital Service Records</h1>
+        <p class="text-black font-semibold text-lg mb-4 bg-white bg-opacity-70 p-2 rounded-md inline-block">Track your car's service history easily.</p>
         
-        <p id="currentUserId" class="text-sm text-gray-600 mb-4 bg-white bg-opacity-70 p-2 rounded-md inline-block">Your User ID: Loading...</p>
+        <p id="currentUserId" class="text-sm text-gray-700 mb-6 bg-white bg-opacity-70 p-2 rounded-md inline-block">Your User ID: Loading...</p>
 
-        <div class="add-record-container bg-white p-8 rounded-xl shadow-lg mx-auto max-w-2xl text-left mb-8">
+        <!-- Form for adding a new record -->
+        <div class="add-record-container bg-white p-6 md:p-8 rounded-xl shadow-lg mx-auto max-w-2xl text-left mb-8">
             <h3 class="text-2xl font-semibold text-[#1C4E80] mb-4">Add New Service Record</h3>
             <div class="space-y-4">
                 <div>
@@ -292,7 +106,8 @@
             </div>
         </div>
 
-        <div class="records-display-container bg-white p-8 rounded-xl shadow-lg mx-auto max-w-2xl text-left">
+        <!-- Container for displaying records -->
+        <div class="records-display-container bg-white p-6 md:p-8 rounded-xl shadow-lg mx-auto max-w-2xl text-left">
             <h3 class="text-2xl font-semibold text-[#1C4E80] mb-4 text-center">Service History Timeline</h3>
             <div id="recordsTimeline" class="timeline-container">
                 <p class="text-center text-gray-500">Loading service records...</p>
@@ -317,5 +132,189 @@
             </div>
         </div>
     </footer>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy as firestoreOrderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        // These variables are placeholders that will be replaced by the Canvas environment.
+        // For local testing, you could replace them with your actual Firebase config.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // A fallback configuration for local development, if needed.
+            // Replace with your actual config from the Firebase console.
+            apiKey: "YOUR_FALLBACK_API_KEY",
+            authDomain: "YOUR_FALLBACK_AUTH_DOMAIN",
+            projectId: "YOUR_FALLBACK_PROJECT_ID",
+            storageBucket: "YOUR_FALLBACK_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_FALLBACK_SENDER_ID",
+            appId: "YOUR_FALLBACK_APP_ID"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase services
+        let app;
+        let db;
+        let auth;
+        let userId = 'loading...'; // Initialize userId
+
+        // --- Firebase Initialization and Auth ---
+        async function initFirebase() {
+            try {
+                if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_FALLBACK_API_KEY") {
+                    console.error("Firebase config is missing or using fallback. Please configure Firebase.");
+                    showCustomMessage("Firebase not configured. Data persistence will not work.");
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in the user
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('currentUserId').textContent = `Your User ID: ${userId}`;
+                        fetchServiceRecords(); // Fetch records once authenticated
+                    } else {
+                        userId = 'anonymous';
+                        document.getElementById('currentUserId').textContent = `Your User ID: ${userId} (signed out)`;
+                        fetchServiceRecords(); // Still fetch public records if any
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                document.getElementById('currentUserId').textContent = `Firebase Error: ${error.message}`;
+            }
+        }
+
+        // Call initialization on script load
+        initFirebase();
+
+        // --- Firestore Functions ---
+
+        // Function to add a service record
+        window.addServiceRecord = async () => {
+            if (!db) {
+                showCustomMessage('Database not connected. Cannot add record.');
+                return;
+            }
+            
+            const serviceDate = document.getElementById('serviceDate').value;
+            const serviceType = document.getElementById('serviceType').value;
+            const serviceNotes = document.getElementById('serviceNotes').value;
+
+            if (!serviceDate || !serviceType || !serviceNotes) {
+                showCustomMessage('Please fill in all fields (Date, Service Type, Notes).');
+                return;
+            }
+
+            try {
+                // Public path for collaborative apps
+                const recordsCollectionPath = `artifacts/${appId}/public/data/serviceRecords`;
+                await addDoc(collection(db, recordsCollectionPath), {
+                    userId: userId,
+                    date: serviceDate,
+                    serviceType: serviceType,
+                    notes: serviceNotes,
+                    timestamp: serverTimestamp()
+                });
+                
+                // Clear the form fields after successful submission
+                document.getElementById('serviceDate').value = '';
+                document.getElementById('serviceType').value = '';
+                document.getElementById('serviceNotes').value = '';
+                showCustomMessage('Record added successfully!');
+
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showCustomMessage('Error adding record. Please try again.');
+            }
+        };
+
+        // Function to fetch and display service records in real-time
+        function fetchServiceRecords() {
+            if (!db) {
+                console.error("Firestore not initialized.");
+                return;
+            }
+
+            const recordsCollectionPath = `artifacts/${appId}/public/data/serviceRecords`;
+            const recordsRef = collection(db, recordsCollectionPath);
+            const q = query(recordsRef, firestoreOrderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                const recordsContainer = document.getElementById('recordsTimeline');
+                recordsContainer.innerHTML = ''; // Clear existing records
+
+                if (snapshot.empty) {
+                    recordsContainer.innerHTML = '<p class="text-gray-600 text-center">No service records found. Add one to get started!</p>';
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const record = doc.data();
+                    const recordElement = document.createElement('div');
+                    recordElement.className = 'timeline-item bg-white p-4 rounded-lg shadow-md mb-6 border-l-4 border-[#1C4E80]';
+
+                    // Format date nicely from timestamp or fallback to date field
+                    let formattedDate = record.date;
+                    if (record.timestamp && record.timestamp.toDate) {
+                        formattedDate = record.timestamp.toDate().toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        });
+                    }
+
+                    recordElement.innerHTML = `
+                        <div class="timeline-dot"></div>
+                        <p class="text-sm text-gray-500 mb-1">${formattedDate}</p>
+                        <h4 class="text-xl font-semibold text-[#1C4E80] mb-2">${record.serviceType}</h4>
+                        <p class="text-gray-700 mb-2">${record.notes}</p>
+                        <p class="text-xs text-gray-400 mt-2">Recorded by: ${record.userId.substring(0, 8)}...</p>
+                    `;
+                    recordsContainer.appendChild(recordElement);
+                });
+
+            }, (error) => {
+                console.error("Error fetching documents: ", error);
+                document.getElementById('recordsTimeline').innerHTML = '<p class="text-red-500 text-center">Error loading records. Please try again.</p>';
+            });
+        }
+
+        // --- UI Helper Functions ---
+        function showCustomMessage(message) {
+            const existingMessageBox = document.getElementById('custom-message-box');
+            if (existingMessageBox) {
+                existingMessageBox.remove();
+            }
+
+            const messageBox = document.createElement('div');
+            messageBox.id = 'custom-message-box';
+            messageBox.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300';
+            messageBox.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm transform scale-95 transition-transform duration-300">
+                    <p class="text-lg font-semibold mb-4">${message}</p>
+                    <button class="bg-[#1C4E80] text-white px-6 py-2 rounded-md hover:bg-[#0C2A4F] transition" onclick="this.closest('#custom-message-box').remove()">OK</button>
+                </div>
+            `;
+            document.body.appendChild(messageBox);
+            // Trigger animations
+            setTimeout(() => {
+                messageBox.classList.add('opacity-100');
+                messageBox.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+    </script>
 </body>
 </html>
